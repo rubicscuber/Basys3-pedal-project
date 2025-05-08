@@ -1,0 +1,6 @@
+*.xml
+*.project
+*.cf
+*.ghw
+*.prefs
+.settings
