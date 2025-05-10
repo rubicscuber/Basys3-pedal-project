@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity axis_i2s2 is
+entity VHD_axis_i2s2 is
     port(
         clock : in std_logic;
         reset : in std_logic;
@@ -28,10 +28,10 @@ entity axis_i2s2 is
         rx_sclk : out std_logic;
         rx_sdin : in std_logic
     );
-end entity axis_i2s2;
+end entity;
 
 
-architecture behavioral of axis_i2s2 is
+architecture behavioral of VHD_axis_i2s2 is
 
     constant EOF : integer := 455;
     signal count : unsigned(8 downto 0); 
