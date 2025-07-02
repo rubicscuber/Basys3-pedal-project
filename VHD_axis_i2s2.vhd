@@ -33,7 +33,7 @@ end entity;
 
 architecture behavioral of VHD_axis_i2s2 is
 
-    constant EOF : integer := 455;
+    constant EOF : integer := 455; --"111000111"
     signal count : unsigned(8 downto 0); 
     --signal lrck : std_logic;
     --signal sclk : std_logic;
@@ -117,9 +117,9 @@ begin
                 tx_data_l_shift <= tx_data_l(23 downto 0);
                 tx_data_r_shift <= tx_data_r(23 downto 0);
 
-            elsif count(2 downto 0) = 7 and 
-                  count(7 downto 3) >= 1 and 
-                  count(7 downto 3) <= 24 then
+            elsif count(2 downto 0) = 7 and    --"111"
+                  count(7 downto 3) >= 1 and   --"00001"
+                  count(7 downto 3) <= 24 then --"11000"
 
                 if count(8) = '1' then --lrck
                     tx_data_l_shift <= tx_data_l_shift(22 downto 0) & '0';
@@ -131,6 +131,7 @@ begin
         end if;
     end process;
 
+    --i2s transmit shift registers
     SHIFT_DATA_CONCURRENT : process (clock) is 
     begin
         if rising_edge(clock) then
@@ -162,9 +163,9 @@ begin
     RECEIVE_SHIFT_REGISTERS : process(clock) is 
     begin
         if rising_edge(clock) then
-            if count(2 downto 0) = 3 and
-               count(7 downto 3) >= 1 and
-               count(7 downto 3) <= 24 then
+            if count(2 downto 0) = 3 and    --"011"
+               count(7 downto 3) >= 1 and   --"00001"
+               count(7 downto 3) <= 24 then --"11000"
 
                 if count(8) = '1' then
                     rx_data_r_shift <= rx_data_r_shift(22 downto 0) & din_sync;
@@ -189,6 +190,7 @@ begin
         end if;
     end process;
 
+    --multiplex between data_r and data_l based on status of last
     MUX_RX_MASTER_DATA : with rx_m_last select
         rx_m_data <= rx_data_r when '1',
                      rx_data_l when '0',
@@ -220,8 +222,4 @@ begin
         end if;
     end process;
 
-
-
-
 end architecture behavioral;
-

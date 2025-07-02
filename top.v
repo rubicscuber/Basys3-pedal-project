@@ -19,7 +19,7 @@
 
 module top #(
 	parameter NUMBER_OF_SWITCHES = 4,
-	parameter RESET_POLARITY = 0
+	parameter RESET_POLARITY = 1
 ) (
     input wire       clk,
     input wire [NUMBER_OF_SWITCHES-1:0] sw,
@@ -48,9 +48,9 @@ module top #(
 
 	wire resetn = (reset == RESET_POLARITY) ? 1'b0 : 1'b1;
 	
-    clk_wiz_0 m_clk (
+    clk_wiz_0 m_clk(
         .clk_in1(clk),
-        .axis_clk(axis_clk)
+        .clk_out1(axis_clk)
     );
 
     axis_i2s2 m_i2s2 (
