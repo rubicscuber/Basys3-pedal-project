@@ -33,6 +33,7 @@ end entity;
 
 architecture behavioral of VHD_axis_i2s2 is
 
+    constant ACTIVE : std_logic := '1';
     constant EOF : integer := 455; --"111000111"
     signal count : unsigned(8 downto 0); 
     --signal lrck : std_logic;
@@ -57,7 +58,7 @@ begin
 
     COUNTER : process(clock, reset) is
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             count <= (others => '0');
         elsif rising_edge(clock) then
             count <= count + 1;
@@ -76,7 +77,7 @@ begin
     --axis slave controllers
     AXIS_SLAVE_CONTROLLER : process(clock, reset) is 
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             tx_s_ready <= '0';
         elsif rising_edge(clock) then
             if tx_s_ready = '1' and tx_s_valid = '1' and tx_s_last = '1' then
@@ -91,7 +92,7 @@ begin
 
     LOAD_TX_DATA_REGISTERS : process(clock, reset) is
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             tx_data_r <= (others => '0');
             tx_data_l <= (others => '0');
         elsif rising_edge(clock) then
@@ -108,7 +109,7 @@ begin
     --i2s transmit shift registers
     SHIFT_DATA : process(clock, reset) is
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             tx_data_l_shift <= (others => '0');
             tx_data_r_shift <= (others => '0');
         elsif rising_edge(clock) then
@@ -179,7 +180,7 @@ begin
     --axis master controllers
     LOAD_RX_DATA_REGISTERS : process(clock, reset) is
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             rx_data_r <= (others => '0');
             rx_data_l <= (others => '0');
         elsif rising_edge(clock) then
@@ -198,7 +199,7 @@ begin
     
     RX_MASTER_VALID : process (clock, reset) is 
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             rx_m_valid <= '0';
         elsif rising_edge(clock) then
             if count = EOF and rx_m_valid = '0' then
@@ -211,7 +212,7 @@ begin
 
     RX_MASTER_LAST : process(clock, reset) is
     begin
-        if reset = '0' then
+        if reset = ACTIVE then
             rx_m_last <= '0';
         elsif rising_edge(clock) then
             if count = EOF and rx_m_valid = '0' then

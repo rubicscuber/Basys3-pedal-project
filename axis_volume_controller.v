@@ -45,23 +45,24 @@ module axis_volume_controller #(
     wire [3:0] sw_sync = sw_sync_r[2];
     reg [MULTIPLIER_WIDTH:0] multiplier = 'b0; // range of 0x00:0x10 for width=4
 
-    wire m_select = m_axis_last;
-    wire m_new_word = (m_axis_valid == 1'b1 && m_axis_ready == 1'b1) ? 1'b1 : 1'b0;
-    wire m_new_packet = (m_new_word == 1'b1 && m_axis_last == 1'b1) ? 1'b1 : 1'b0;
+    
 
+    //S_NEW_WORD_PACKET
     wire s_select = s_axis_last;
     wire s_new_word = (s_axis_valid == 1'b1 && s_axis_ready == 1'b1) ? 1'b1 : 1'b0;
     wire s_new_packet = (s_new_word == 1'b1 && s_axis_last == 1'b1) ? 1'b1 : 1'b0;
     reg s_new_packet_r = 1'b0;
 
+    //shift new_packet flag into register
     always@(posedge clk) begin
         sw_sync_r[2] <= sw_sync_r[1];
         sw_sync_r[1] <= sw_sync_r[0];
         sw_sync_r[0] <= sw;
         multiplier <= {sw_sync,{MULTIPLIER_WIDTH{1'b0}}} / {4{1'b1}};
-        s_new_packet_r <= s_new_packet;
+        s_new_packet_r <= s_new_packet; //S_NEW_PACKET_SHIFT
     end
 
+    //LOAD_DATA_REGISTER
     always@(posedge clk)
         if (s_new_word == 1'b1) 
 
@@ -75,18 +76,26 @@ module axis_volume_controller #(
             data[1] <= $signed(data[1]) * multiplier;
         end
 
+    //M_NEW_WORD_PACKET
+    wire m_select = m_axis_last;
+    wire m_new_word = (m_axis_valid == 1'b1 && m_axis_ready == 1'b1) ? 1'b1 : 1'b0;
+    wire m_new_packet = (m_new_word == 1'b1 && m_axis_last == 1'b1) ? 1'b1 : 1'b0;
+
+    //M_AXIS_VALID_PROC
     always@(posedge clk)
         if (s_new_packet_r == 1'b1)
             m_axis_valid <= 1'b1;
         else if (m_new_packet == 1'b1)
             m_axis_valid <= 1'b0;
 
+    //M_AXIS_LAST_PROC
     always@(posedge clk)
         if (m_new_packet == 1'b1)
             m_axis_last <= 1'b0;
         else if (m_new_word == 1'b1)
             m_axis_last <= 1'b1;
 
+    //TRANSMIT_DATA
     always@(m_axis_valid, data[0], data[1], m_select)
         if (m_axis_valid == 1'b1)
             //taking the top 24 bits from 0 or 1 of the data array
@@ -94,6 +103,7 @@ module axis_volume_controller #(
         else
             m_axis_data = 'b0;
 
+    //S_AXIS_READY_PROC
     always@(posedge clk)
         if (s_new_packet == 1'b1)
             s_axis_ready <= 1'b0;
