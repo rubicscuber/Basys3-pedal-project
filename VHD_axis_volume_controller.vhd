@@ -7,12 +7,12 @@ entity VHD_axis_volume_controller is
         clock : in std_logic;
         reset : in std_logic;
 
-        m_axis_data : out std_logic_vector(23 downto 0);
+        m_axis_data_out : out std_logic_vector(23 downto 0);
         m_axis_valid : out std_logic;
         m_axis_ready : in std_logic;
         m_axis_last : out std_logic;
 
-        s_axis_data : in std_logic_vector(23 downto 0);
+        s_axis_data_in : in std_logic_vector(23 downto 0);
         s_axis_valid : in std_logic;
         s_axis_ready : out std_logic;
         s_axis_last : in std_logic
@@ -45,7 +45,7 @@ begin
                 if s_axis_last = '1' then
                     s_new_packet <= '1';
                 else 
-                    s_new_packet <= '0';
+                    s_new_packet <= '0'; --TODO: Maybe some logic preventing this from de-asserting
                 end if;
                 s_new_word <= '1';
             else
@@ -66,7 +66,7 @@ begin
     begin
         if rising_edge(clock) then
             if s_new_packet_r = '1' then
-                data(0) <= s_axis_data & "00000000";
+                data(0) <= s_axis_data_in & "00000000";
             end if;
         end if;
     end process;
@@ -117,9 +117,9 @@ begin
     begin
         if rising_edge(clock) then
             if m_axis_valid_out = '1' then
-                m_axis_data <= data(0)(31 downto 8);
+                m_axis_data_out <= data(0)(31 downto 8);
             else
-                m_axis_data <= (others => '0');
+                m_axis_data_out <= (others => '0');
             end if;
         end if;
     end process;

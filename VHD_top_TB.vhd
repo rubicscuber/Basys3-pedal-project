@@ -60,22 +60,22 @@ begin
     CLOCK_GEN : process
     begin
         clk <= '1';
-        wait for 10 ps;
+        wait for 100 ps;
         clk <= '0';
-        wait for 10 ps;
+        wait for 100 ps;
     end process;
     
     RESET_PROC : process
     begin
         btnC <= '1';
-        wait for 10 ps;
+        wait for 100 ps;
         btnC <= '0';
         wait;
     end process;
 
     STIM : process
     begin
-        dataVector <= std_logic_vector(to_unsigned(488, 32));
+        dataVector <= std_logic_vector(to_unsigned(5697, 32));
         wait until rising_edge(tx_lrck);
 
         for i in 0 to 31 loop
