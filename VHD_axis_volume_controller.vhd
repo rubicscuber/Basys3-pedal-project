@@ -7,15 +7,15 @@ entity VHD_axis_volume_controller is
         clock : in std_logic;
         reset : in std_logic;
 
-        s_axis_data : in std_logic_vector(23 downto 0);
-        s_axis_valid : in std_logic;
-        s_axis_ready : out std_logic;
-        s_axis_last : in std_logic;
-
         m_axis_data : out std_logic_vector(23 downto 0);
         m_axis_valid : out std_logic;
         m_axis_ready : in std_logic;
-        m_axis_last : out std_logic
+        m_axis_last : out std_logic;
+
+        s_axis_data : in std_logic_vector(23 downto 0);
+        s_axis_valid : in std_logic;
+        s_axis_ready : out std_logic;
+        s_axis_last : in std_logic
     );
 end entity VHD_axis_volume_controller;
 
