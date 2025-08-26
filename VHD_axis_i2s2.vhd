@@ -50,6 +50,9 @@ architecture behavioral of VHD_axis_i2s2 is
     signal rx_data_r_shift : std_logic_vector(23 downto 0);
     signal rx_data_r : std_logic_vector(31 downto 0);
     signal rx_data_l : std_logic_vector(31 downto 0);
+    signal rx_m_valid_out : std_logic;
+    signal rx_m_last_out : std_logic;
+    signal tx_s_ready_out : std_logic;
 
 begin
 
@@ -71,13 +74,15 @@ begin
     rx_lrck <= count(8);
     rx_sclk <= count(2);
 
+    tx_s_ready <= tx_s_ready_out;
+
     --axis slave controllers
     AXIS_SLAVE_CONTROLLER : process(clock, reset) is 
     begin
         if reset = ACTIVE then
             tx_s_ready <= '0';
         elsif rising_edge(clock) then
-            if tx_s_ready = '1' and tx_s_valid = '1' and tx_s_last = '1' then
+            if tx_s_ready_out = '1' and tx_s_valid = '1' and tx_s_last = '1' then
                 tx_s_ready <= '0';
             elsif count = 0 then
                 tx_s_ready <= '0';
@@ -93,7 +98,7 @@ begin
             tx_data_r <= (others => '0');
             tx_data_l <= (others => '0');
         elsif rising_edge(clock) then
-            if tx_s_valid = '1' and tx_s_ready = '1' then
+            if tx_s_valid = '1' and tx_s_ready_out = '1' then
                 if tx_s_last = '1' then
                     tx_data_l <= tx_s_data;
                 else 
@@ -174,6 +179,9 @@ begin
         end if;
     end process;
 
+    rx_m_valid <= rx_m_valid_out; --workaround to read the ouput port
+    rx_m_last <= rx_m_last_out;
+
     --axis master controllers
     LOAD_RX_DATA_REGISTERS : process(clock, reset) is
     begin
@@ -181,7 +189,7 @@ begin
             rx_data_r <= (others => '0');
             rx_data_l <= (others => '0');
         elsif rising_edge(clock) then
-            if count = EOF and rx_m_valid = '0' then
+            if count = EOF and rx_m_valid_out = '0' then
                 rx_data_r <= "00000000" & rx_data_r_shift;
                 rx_data_l <= "00000000" & rx_data_l_shift;
             end if;
@@ -189,7 +197,7 @@ begin
     end process;
 
     --multiplex between data_r and data_l based on status of last
-    MUX_RX_MASTER_DATA : with rx_m_last select
+    MUX_RX_MASTER_DATA : with rx_m_last_out select
         rx_m_data <= rx_data_r when '1', --output data
                      rx_data_l when '0', --output data
                      (others => '0') when others;
@@ -197,12 +205,12 @@ begin
     RX_MASTER_VALID_CONTROL : process (clock, reset) is 
     begin
         if reset = ACTIVE then
-            rx_m_valid <= '0';
+            rx_m_valid_out <= '0';
         elsif rising_edge(clock) then
-            if count = EOF and rx_m_valid = '0' then
-                rx_m_valid <= '1';
-            elsif rx_m_valid = '1' and rx_m_ready = '1' and rx_m_last = '1' then
-                rx_m_valid <= '0';
+            if count = EOF and rx_m_valid_out = '0' then
+                rx_m_valid_out <= '1';
+            elsif rx_m_valid_out = '1' and rx_m_ready = '1' and rx_m_last_out = '1' then
+                rx_m_valid_out <= '0';
             end if;
         end if;
     end process;
@@ -210,12 +218,12 @@ begin
     RX_MASTER_LAST_CONTORL : process(clock, reset) is
     begin
         if reset = ACTIVE then
-            rx_m_last <= '0';
+            rx_m_last_out <= '0';
         elsif rising_edge(clock) then
-            if count = EOF and rx_m_valid = '0' then
-                rx_m_last <= '0';
-            elsif rx_m_valid = '1' and rx_m_ready = '1' then
-                rx_m_last <= not rx_m_last;
+            if count = EOF and rx_m_valid_out = '0' then
+                rx_m_last_out <= '0';
+            elsif rx_m_valid_out = '1' and rx_m_ready = '1' then
+                rx_m_last_out <= not rx_m_last_out;
             end if;
         end if;
     end process;

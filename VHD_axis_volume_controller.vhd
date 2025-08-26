@@ -30,13 +30,18 @@ architecture VHD_axis_volume_controller_ARCH of VHD_axis_volume_controller is
     signal s_new_packet_r : std_logic;
     signal m_new_word : std_logic;
     signal m_new_packet : std_logic;
+    signal m_axis_valid_out : std_logic;
+    signal m_axis_last_out : std_logic;
+    signal s_axis_ready_out : std_logic;
 
 begin
+
+    s_axis_ready <= s_axis_ready_out;
 
     S_NEW_WORD_PACKET : process(clock) is
     begin
         if rising_edge(clock) then
-            if s_axis_valid = '1' and s_axis_ready = '1' then
+            if s_axis_valid = '1' and s_axis_ready_out = '1' then
                 if s_axis_last = '1' then
                     s_new_packet <= '1';
                 else 
@@ -66,12 +71,14 @@ begin
         end if;
     end process;
 
+    m_axis_last <= m_axis_last_out;
+
     M_NEW_WORD_PACKET : process(clock) is
     begin
         if rising_edge(clock) then
-            if m_axis_valid = '1' and m_axis_ready = '1' then
+            if m_axis_valid_out = '1' and m_axis_ready = '1' then
                 m_new_word <= '1';
-                if m_axis_last = '1' then
+                if m_axis_last_out = '1' then
                     m_new_packet <= '1';
                 else 
                     m_new_packet <= '0';
@@ -86,9 +93,9 @@ begin
     begin
         if rising_edge(clock) then
             if s_new_packet_r = '1' then
-                m_axis_valid <= '1';
+                m_axis_valid_out <= '1';
             elsif m_new_packet = '1' then
-                m_axis_valid <= '0';
+                m_axis_valid_out <= '0';
             end if;
         end if;
     end process;
@@ -97,31 +104,35 @@ begin
     begin
         if rising_edge(clock) then
             if m_new_packet = '1' then
-                m_axis_last <= '0';
+                m_axis_last_out <= '0';
             elsif m_new_word = '1' then
-                m_axis_last <= '1';
+                m_axis_last_out <= '1';
             end if;
         end if;
     end process;
 
+    m_axis_valid <= m_axis_valid_out;
+
     TRANSMIT_DATA : process(clock)
     begin
         if rising_edge(clock) then
-            if M_axis_valid = '1' then
+            if m_axis_valid_out = '1' then
                 m_axis_data <= data(0)(31 downto 8);
             else
-                data(0) <= (others => '0');
+                m_axis_data <= (others => '0');
             end if;
         end if;
     end process;
 
     S_AXIS_READY_PROC : process(clock) 
     begin
-        if rising_edge(clock) then
+        if reset = '1' then
+            s_axis_ready_out <= '1';
+        elsif rising_edge(clock) then
             if s_new_packet = '1' then
-                s_axis_ready <= '0';
+                s_axis_ready_out <= '0';
             elsif m_new_packet = '1' then
-                s_axis_ready <= '1';
+                s_axis_ready_out <= '1';
             end if;
         end if;
     end process;
