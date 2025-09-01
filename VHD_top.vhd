@@ -29,12 +29,10 @@ architecture VHD_top_ARCH of VHD_top is
             tx_s_data  : in  std_logic_vector(31 downto 0);
             tx_s_valid : in  std_logic;
             tx_s_ready : out std_logic;
-            tx_s_last  : in  std_logic;
 
             rx_m_data  : out std_logic_vector(31 downto 0);
             rx_m_valid : out std_logic;
             rx_m_ready : in  std_logic;
-            rx_m_last  : out std_logic;
 
             tx_mclk    : out std_logic;
             tx_lrck    : out std_logic;
@@ -56,12 +54,10 @@ architecture VHD_top_ARCH of VHD_top is
             s_axis_data_in  : in  std_logic_vector(31 downto 0);
             s_axis_valid : in  std_logic;
             s_axis_ready : out std_logic;
-            s_axis_last  : in  std_logic;
 
             m_axis_data_out  : out std_logic_vector(31 downto 0);
             m_axis_valid : out std_logic;
-            m_axis_ready : in  std_logic;
-            m_axis_last  : out std_logic
+            m_axis_ready : in  std_logic
 
         );
     end component VHD_axis_volume_controller;
@@ -79,12 +75,10 @@ architecture VHD_top_ARCH of VHD_top is
     signal s_data  : std_logic_vector(31 downto 0);
     signal s_valid : std_logic;
     signal s_ready : std_logic;
-    signal s_last  : std_logic;
 
     signal m_data  : std_logic_vector(31 downto 0);
     signal m_valid : std_logic;
     signal m_ready : std_logic;
-    signal m_last  : std_logic;
 
 begin
 
@@ -96,12 +90,10 @@ begin
             tx_s_data  => s_data,
             tx_s_valid => s_valid,
             tx_s_ready => s_ready,
-            tx_s_last  => s_last,
 
             rx_m_data  => m_data,
             rx_m_valid => m_valid,
             rx_m_ready => m_ready,
-            rx_m_last  => m_last,
 
             tx_mclk    => tx_mclk,
             tx_lrck    => tx_lrck,
@@ -122,12 +114,10 @@ begin
             s_axis_data_in  => m_data,
             s_axis_valid => m_valid,
             s_axis_ready => m_ready,
-            s_axis_last  => m_last,
 
             m_axis_data_out  => s_data,
             m_axis_valid => s_valid,
-            m_axis_ready => s_ready,
-            m_axis_last  => s_last
+            m_axis_ready => s_ready
         );
 
     --axis_clock_gen : component clk_wiz_0

@@ -10,12 +10,10 @@ entity VHD_axis_i2s2 is
         tx_s_data : in std_logic_vector(31 downto 0);
         tx_s_valid : in std_logic;
         tx_s_ready : out std_logic; --register
-        tx_s_last : in std_logic;
 
         rx_m_data : out std_logic_vector(31 downto 0);
         rx_m_valid : out std_logic; --register
         rx_m_ready : in std_logic;
-        rx_m_last : out std_logic; --register
 
         --clocks to keep i2s in slave mode on transmit side
         tx_mclk : out std_logic;
@@ -51,8 +49,8 @@ architecture behavioral of VHD_axis_i2s2 is
     signal rx_data_r : std_logic_vector(31 downto 0);
     signal rx_data_l : std_logic_vector(31 downto 0);
     signal rx_m_valid_out : std_logic;
-    signal rx_m_last_out : std_logic;
     signal tx_s_ready_out : std_logic;
+    signal tx_data : std_logic_vector(31 downto 0);
 
 begin
 
@@ -82,7 +80,7 @@ begin
         if reset = ACTIVE then
             tx_s_ready_out <= '0';
         elsif rising_edge(clock) then
-            if tx_s_ready_out = '1' and tx_s_valid = '1' and tx_s_last = '1' then
+            if tx_s_ready_out = '1' and tx_s_valid = '1' then
                 tx_s_ready_out <= '0';
             elsif count = 0 then
                 tx_s_ready_out <= '0';
@@ -92,24 +90,19 @@ begin
         end if;
     end process;
 
-    --load left and right registers for transmit to outside world
+    --load left and right registers, eventually goes to audio codec DAC
     LOAD_TX_DATA_REGISTERS : process(clock, reset) is
     begin
         if reset = ACTIVE then
-            tx_data_r <= (others => '0');
             tx_data_l <= (others => '0');
         elsif rising_edge(clock) then
             if tx_s_valid = '1' and tx_s_ready_out = '1' then
-                if tx_s_last = '1' then
-                    tx_data_l <= tx_s_data;
-                else 
-                    tx_data_r <= tx_s_data;
-                end if;
+                tx_data_l <= tx_s_data;
             end if;
         end if;
     end process;
 
-    --shift 24 bit data vector into 1 line to transmit outside
+    --shift 24 bit data vector towards DAC
     SHIFT_DATA : process(clock, reset) is
     begin
         if reset = ACTIVE then
@@ -135,7 +128,7 @@ begin
         end if;
     end process;
 
-    --concurrent process that peels off the MSB to outside world
+    --concurrent process that peels off the MSB to DAC
     SHIFT_DATA_CONCURRENT : process (clock) is 
     begin
         if rising_edge(clock) then
@@ -154,7 +147,7 @@ begin
         end if;
     end process;
 
-    --synch din to axis clock domain
+    --Allows 2 clock cycles for the incoming ADC data to become metastable
     din_sync <= din_sync_shift(2);
     SYNC_SDIN : process(clock) is 
     begin
@@ -163,8 +156,9 @@ begin
         end if;
     end process;
 
-    --receive shift registers
-    RECEIVE_SHIFT_REGISTERS : process(clock) is 
+    --uses the frame counter to shift incomming serial data
+    --until the following process below this registers it.
+    SHIFT_ADC_DATA : process(clock) is 
     begin
         if rising_edge(clock) then
             if count(2 downto 0) = 3 and    --"011"
@@ -181,10 +175,9 @@ begin
     end process;
 
     rx_m_valid <= rx_m_valid_out; 
-    rx_m_last <= rx_m_last_out;
 
-    --axis master controllers
-    LOAD_RX_DATA_REGISTERS : process(clock, reset) is
+    --Registers the incoming ADC data at end of frame count
+    REGISTER_ADC_DATA: process(clock, reset) is
     begin
         if reset = ACTIVE then
             rx_data_r <= (others => '0');
@@ -200,35 +193,36 @@ begin
 
     --multiplex between data_r and data_l based on status of last
     --TODO: Remove left/right channel switching behavior and simplify axis
-    MUX_RX_MASTER_DATA : with rx_m_last_out select
-        rx_m_data <= rx_data_r when '1', --output data
-                     rx_data_l when '0', --output data
-                     (others => '0') when others;
+    --MUX_RX_MASTER_DATA : with rx_m_last_out select
+    --    rx_m_data <= rx_data_r when '1', --output data
+    --                 rx_data_l when '0', --output data
+    --                 (others => '0') when others;
+    rx_m_data <= rx_data_r;
 
-    RX_MASTER_VALID_CONTROL : process (clock, reset) is 
+    VALID_CONTROL_OUT : process (clock, reset) is 
     begin
         if reset = ACTIVE then
             rx_m_valid_out <= '0';
         elsif rising_edge(clock) then
             if count = EOF and rx_m_valid_out = '0' then
                 rx_m_valid_out <= '1';
-            elsif rx_m_valid_out = '1' and rx_m_ready = '1' and rx_m_last_out = '1' then
+            elsif rx_m_valid_out = '1' and rx_m_ready = '1' then
                 rx_m_valid_out <= '0';
             end if;
         end if;
     end process;
 
-    RX_MASTER_LAST_CONTORL : process(clock, reset) is
-    begin
-        if reset = ACTIVE then
-            rx_m_last_out <= '0';
-        elsif rising_edge(clock) then
-            if count = EOF and rx_m_valid_out = '0' then
-                rx_m_last_out <= '0';
-            elsif rx_m_valid_out = '1' and rx_m_ready = '1' then
-                rx_m_last_out <= not rx_m_last_out;
-            end if;
-        end if;
-    end process;
+    --LAST_CONTORL_OUT : process(clock, reset) is
+    --begin
+    --    if reset = ACTIVE then
+    --        rx_m_last_out <= '0';
+    --    elsif rising_edge(clock) then
+    --        if count = EOF and rx_m_valid_out = '0' then
+    --            rx_m_last_out <= '0';
+    --        elsif rx_m_valid_out = '1' and rx_m_ready = '1' then
+    --            rx_m_last_out <= not rx_m_last_out;
+    --        end if;
+    --    end if;
+    --end process;
 
 end architecture behavioral;
