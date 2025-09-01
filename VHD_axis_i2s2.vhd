@@ -80,18 +80,19 @@ begin
     AXIS_SLAVE_CONTROLLER : process(clock, reset) is 
     begin
         if reset = ACTIVE then
-            tx_s_ready <= '0';
+            tx_s_ready_out <= '0';
         elsif rising_edge(clock) then
             if tx_s_ready_out = '1' and tx_s_valid = '1' and tx_s_last = '1' then
-                tx_s_ready <= '0';
+                tx_s_ready_out <= '0';
             elsif count = 0 then
-                tx_s_ready <= '0';
+                tx_s_ready_out <= '0';
             elsif count = EOF then
-                tx_s_ready <= '1';
+                tx_s_ready_out <= '1';
             end if;
         end if;
     end process;
 
+    --load left and right registers for transmit to outside world
     LOAD_TX_DATA_REGISTERS : process(clock, reset) is
     begin
         if reset = ACTIVE then
@@ -108,7 +109,7 @@ begin
         end if;
     end process;
 
-    --i2s transmit shift registers
+    --shift 24 bit data vector into 1 line to transmit outside
     SHIFT_DATA : process(clock, reset) is
     begin
         if reset = ACTIVE then
@@ -117,8 +118,8 @@ begin
         elsif rising_edge(clock) then
 
             if count = 7 then
-                tx_data_l_shift <= tx_data_l(23 downto 0);
-                tx_data_r_shift <= tx_data_r(23 downto 0);
+                tx_data_l_shift <= tx_data_l(31 downto 8);
+                tx_data_r_shift <= tx_data_r(31 downto 8);
 
             elsif count(2 downto 0) = 7 and    --"111"
                   count(7 downto 3) >= 1 and   --"00001"
@@ -134,7 +135,7 @@ begin
         end if;
     end process;
 
-    --i2s transmit shift registers
+    --concurrent process that peels off the MSB to outside world
     SHIFT_DATA_CONCURRENT : process (clock) is 
     begin
         if rising_edge(clock) then
@@ -179,7 +180,7 @@ begin
         end if;
     end process;
 
-    rx_m_valid <= rx_m_valid_out; --workaround to read the ouput port
+    rx_m_valid <= rx_m_valid_out; 
     rx_m_last <= rx_m_last_out;
 
     --axis master controllers
@@ -190,13 +191,15 @@ begin
             rx_data_l <= (others => '0');
         elsif rising_edge(clock) then
             if count = EOF and rx_m_valid_out = '0' then
-                rx_data_r <= "00000000" & rx_data_r_shift;
-                rx_data_l <= "00000000" & rx_data_l_shift;
+                rx_data_r <= rx_data_r_shift & "00000000";
+                rx_data_l <= rx_data_l_shift & "00000000";
+
             end if;
         end if;
     end process;
 
     --multiplex between data_r and data_l based on status of last
+    --TODO: Remove left/right channel switching behavior and simplify axis
     MUX_RX_MASTER_DATA : with rx_m_last_out select
         rx_m_data <= rx_data_r when '1', --output data
                      rx_data_l when '0', --output data

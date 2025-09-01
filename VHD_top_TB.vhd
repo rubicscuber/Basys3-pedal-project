@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity VHD_top_TB is
 end entity VHD_top_TB;
 
-architecture RTL of VHD_top_TB is
+architecture behavioral of VHD_top_TB is
     
     component VHD_top is
         port(
@@ -20,7 +20,7 @@ architecture RTL of VHD_top_TB is
             rx_mclk : out std_logic;
             rx_lrck : out std_logic;
             rx_sclk : out std_logic;
-            rx_data : in  std_logic
+            rx_data : in  std_logic --serial data input from PMOD i2s2 device
         );
     end component;
 
@@ -37,7 +37,7 @@ architecture RTL of VHD_top_TB is
     signal rx_sclk : std_logic;
     signal rx_data : std_logic;
 
-    signal dataVector : std_logic_vector(31 downto 0);
+    signal dataVector : std_logic_vector(23 downto 0);
 
 begin
 
@@ -75,14 +75,14 @@ begin
 
     STIM : process
     begin
-        dataVector <= std_logic_vector(to_unsigned(5697, 32));
+        dataVector <= std_logic_vector(to_unsigned(5697, 24));
         wait until rising_edge(tx_lrck);
 
-        for i in 0 to 31 loop
+        for i in 0 to 23 loop
             wait until rising_edge(tx_sclk);
-            rx_data <= dataVector(i);
+            rx_data <= dataVector(i); --serial data input into axis_i2s2 component
         end loop;
 
     end process;
 
-end architecture RTL;
+end architecture behavioral;

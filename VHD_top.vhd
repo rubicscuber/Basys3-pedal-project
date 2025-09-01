@@ -53,15 +53,16 @@ architecture VHD_top_ARCH of VHD_top is
             clock        : in  std_logic;
             reset        : in  std_logic;
 
-            m_axis_data_out  : out std_logic_vector(23 downto 0);
-            m_axis_valid : out std_logic;
-            m_axis_ready : in  std_logic;
-            m_axis_last  : out std_logic;
-
-            s_axis_data_in  : in  std_logic_vector(23 downto 0);
+            s_axis_data_in  : in  std_logic_vector(31 downto 0);
             s_axis_valid : in  std_logic;
             s_axis_ready : out std_logic;
-            s_axis_last  : in  std_logic
+            s_axis_last  : in  std_logic;
+
+            m_axis_data_out  : out std_logic_vector(31 downto 0);
+            m_axis_valid : out std_logic;
+            m_axis_ready : in  std_logic;
+            m_axis_last  : out std_logic
+
         );
     end component VHD_axis_volume_controller;
 
@@ -118,12 +119,12 @@ begin
             clock        => axis_clock,
             reset        => btnC,
 
-            s_axis_data_in  => m_data(31 downto 8),
+            s_axis_data_in  => m_data,
             s_axis_valid => m_valid,
             s_axis_ready => m_ready,
             s_axis_last  => m_last,
 
-            m_axis_data_out  => s_data(31 downto 8),
+            m_axis_data_out  => s_data,
             m_axis_valid => s_valid,
             m_axis_ready => s_ready,
             m_axis_last  => s_last
