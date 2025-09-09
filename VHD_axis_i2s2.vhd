@@ -98,7 +98,8 @@ begin
         elsif rising_edge(clock) then
             if tx_s_valid = '1' and tx_s_ready_out = '1' then
                 tx_data_l <= tx_s_data;
-            end if;
+                tx_data_r <= (others => '0'); --TODO: clear to mono processing after 
+            end if;                           --verifying hardware tests
         end if;
     end process;
 

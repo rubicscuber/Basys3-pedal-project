@@ -62,13 +62,14 @@ architecture VHD_top_ARCH of VHD_top is
         );
     end component VHD_axis_volume_controller;
 
-    --component clk_wiz_0
-    --    port(
-    --        clk_in1  : in  std_logic;
-    --        reset    : in  std_logic;
-    --        clk_out1 : out std_logic
-    --    );
-    --end component;
+    --comment out for GHDL simulations
+    component clk_wiz_0
+        port(
+            clk_in1  : in  std_logic;
+            reset    : in  std_logic;
+            clk_out1 : out std_logic
+        );
+    end component;
 
     signal axis_clock : std_logic;
 
@@ -120,13 +121,13 @@ begin
             m_axis_ready => s_ready
         );
 
-    --axis_clock_gen : component clk_wiz_0
-    --    port map(
-    --        clk_in1  => clk,
-    --        reset    => btnC,
-    --        clk_out1 => axis_clock
-    --    );
-    axis_clock <= clk; --testbenching only
+    axis_clock_gen : component clk_wiz_0
+        port map(
+            clk_in1  => clk,
+            reset    => btnC,
+            clk_out1 => axis_clock
+        );
+    --axis_clock <= clk; --testbenching only
 
 end architecture VHD_top_ARCH;
 

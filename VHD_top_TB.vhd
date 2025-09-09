@@ -37,7 +37,9 @@ architecture behavioral of VHD_top_TB is
     signal rx_sclk : std_logic;
     signal rx_data : std_logic;
 
-    signal dataVector : std_logic_vector(23 downto 0);
+    type DataArray is array(2 downto 0) of std_logic_vector(23 downto 0);
+    
+    signal testVector : DataArray;
 
 begin
 
@@ -75,12 +77,19 @@ begin
 
     STIM : process
     begin
-        dataVector <= std_logic_vector(to_unsigned(5697, 24));
-        wait until rising_edge(tx_lrck);
+        testVector(0) <= x"6A43D2";
+        testVector(1) <= x"A67055";
+        testVector(2) <= x"7EFE07";
+        
+        for i in 0 to 2 loop
 
-        for i in 0 to 23 loop
-            wait until rising_edge(tx_sclk);
-            rx_data <= dataVector(i); --serial data input into axis_i2s2 component
+            wait until rising_edge(tx_lrck);
+
+            for j in 23 downto 0 loop
+                wait until rising_edge(tx_sclk);
+                rx_data <= testVector(i)(j); --serial input
+            end loop;
+
         end loop;
 
     end process;
