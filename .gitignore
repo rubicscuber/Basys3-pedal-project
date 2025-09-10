@@ -4,3 +4,8 @@
 *.ghw
 *.prefs
 .settings
+*.pyc
+*.asv
+__pycache__
+tanh_24x16777216.txt
+tanh_24x16777216.mif

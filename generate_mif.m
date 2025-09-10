@@ -1,41 +1,55 @@
-num_bits = 12;
+num_bits = 24;
 num_samples = 2^num_bits;
 shape = 4;
-output_filename = sprintf("tanh_%dx%d.mif",num_bits,num_samples);
+txt_filename = sprintf("tanh_%dx%d.txt",num_bits,num_samples);
+mif_filename = sprintf("tanh_%dx%d.mif",num_bits,num_samples);
 
 tanh_samples = zeros(num_samples, 1);
-span = (-1) * num_samples / 2 -1;
+span = (-1) * num_samples / 2 -1; %used to index i properly
 
 for i = 1:num_samples
-    %each value of i is shifted evenly around 0 then scaled to the proper step size
-    %shape is a constant multiple that changes the steepness of the graph
+    % (span+i)/num_samples makes a decimal number from -1 to 1
+    %
+    % shape is a constant multiple that changes the graph
     tanh_samples(i) = tanh(shape*(span+i) / num_samples);
-endfor
+end
 
+%   normalize the fractional numbers to whole numbers 
+%   that occupy the fullest depth possible from -2047 to 2048
+
+%   if its unsigned, the range is 0 to 4096
+%   then scale_factor = num_samples/max_val;
 max_val = max(tanh_samples);
 scale_factor = num_samples / 2 / max_val - 1;
+scaled_samples = 0;
 
-% 
 for i = 1:num_samples
   scaled_samples(i) = round(tanh_samples(i) * scale_factor);
-endfor
+end
 
-plot(scaled_samples);
-title('Tanh plot 24 bit');
-xlabel('Vin');
-ylabel('Vout');
+% plot(scaled_samples);
+% title('Tanh plot 24 bit');
+% xlabel('Vin');
+% ylabel('Vout');
 
-function write_to_mif(filename, data, bit_width)
+write_to_txt(txt_filename, scaled_samples, num_bits);
+
+%need supported version of CPython
+%py.to_bin.convert(output_filename, mif_filename, num_bits);
+
+function write_to_txt(filename, data, num_bits)
     fid = fopen(filename, 'w');
 
     for i = 1:length(data)
-        bin_str = dec2bin(data(i), bit_width);
-        fprintf(fid, '%s\n', bin_str);
-    endfor
-
+        stringNum = sprintf('%d', data(i));
+        if i < 2^num_bits            
+            fprintf(fid, '%s\n', stringNum);
+        elseif i == 2^num_bits
+            fprintf(fid, '%s', stringNum);
+        end
+    end
     fclose(fid);
+end 
 
-endfunction
 
-write_to_mif(output_filename, scaled_samples, num_bits);
 
