@@ -37,7 +37,8 @@ architecture VHD_axis_volume_controller_ARCH of VHD_axis_volume_controller is
     constant DATA_WIDTH : integer := BIT_WIDTH_G;
     constant ADDR_WIDTH : integer := BIT_WIDTH_G;
     --constant DATA_FILE : string := "tanh_12x4096.mif";
-    constant DATA_FILE : string := "tanh_16x65536.mif";
+    --constant DATA_FILE : string := "tanh_16x65536.mif";
+    constant DATA_FILE : string := "9tanh_16x65536.mif";
     --constant DATA_FILE : string := "tanh_24x.16777216.mif";
 
     signal addr : std_logic_vector(DATA_WIDTH-1 downto 0);
