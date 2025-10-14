@@ -7,5 +7,11 @@
 *.pyc
 *.asv
 __pycache__
+tanh_12x4096.mif
+tanh_12x4096.txt
+tanh_16x65536.mif
+tanh_16x65536.txt
+9tanh_16x65536.mif
+9tanh_16x65536.txt
 tanh_24x16777216.txt
 tanh_24x16777216.mif
