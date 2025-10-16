@@ -6,6 +6,8 @@
 .settings
 *.pyc
 *.asv
+.Xil
+GuitarPedalProject
 __pycache__
 tanh_12x4096.mif
 tanh_12x4096.txt
