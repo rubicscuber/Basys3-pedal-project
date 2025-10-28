@@ -3,11 +3,13 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
 
+-----------------------------------------------------------
 --
 -- Read only memory designed to take addresses directly from ADC data
--- ADC data is expected to span the signed range 
---
---
+-- If ADC data is within a signed range, it must first be converted 
+-- such that it spans the unsigned range of ADDR_WIDTH
+-- 
+-----------------------------------------------------------
 entity nr_rom is
     generic(
         DATA_WIDTH_G : integer;
@@ -34,7 +36,7 @@ architecture behavioral of nr_rom is
         variable RomFileLine : line;
         variable ROM_MEMORY : mem_type;
         variable temp_data : bit_vector(DATA_WIDTH_G-1 downto 0);
-        
+
     begin
         for i in mem_type'range loop
             readline (RomFile, RomFileLine); 
@@ -52,21 +54,8 @@ begin
     READ_MEMORY : process(clock) is 
     begin
         if rising_edge(clock) then
-            --dout_reg1 <= memory(to_integer(signed(addr)) + 2048);
-            --dout_reg2 <= dout_reg1;
-
-            --take input up from the negative rage
-            --TODO: move this functionality to the i2s2 component
-            dout <= memory(to_integer(signed(addr)) + 2**ADDR_WIDTH_G/2 );
+            dout <= memory(to_integer(signed(addr)));
         end if;
     end process;
-
-    --REGISTER_OUTPUT : process(clock) is
-    --begin
-    --    if rising_edge(clock) then
-    --        --dout <= dout_reg2;
-    --        dout <= dout_reg1; --optional, may use generic to swap between behaviors
-    --    end if;
-    --end process;
 
 end architecture behavioral;

@@ -1,8 +1,8 @@
 num_bits = 16;
 num_samples = 2^num_bits;
-shape = 9;
-txt_filename = sprintf("9tanh_%dx%d.txt",num_bits,num_samples);
-mif_filename = sprintf("9tanh_%dx%d.mif",num_bits,num_samples);
+shape = 20;
+txt_filename = sprintf("20tanh_%dx%d.txt",num_bits,num_samples);
+mif_filename = sprintf("20tanh_%dx%d.mif",num_bits,num_samples);
 
 tanh_samples = zeros(num_samples, 1);
 
@@ -29,7 +29,7 @@ for i = 1:num_samples
 endfor
 
  plot(scaled_samples);
- title('Tanh(9x) plot 16 bit, x set = [-0.5, 0.5]');
+ title('Tanh(20x) plot 16 bit, x set = [-0.5, 0.5]');
  xlabel('Vin');
  ylabel('Vout');
 

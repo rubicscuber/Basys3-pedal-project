@@ -2,9 +2,17 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+-----------------------------------------------------------
+--
+--
+--
+--
+--
+-----------------------------------------------------------
+
 entity VHD_top is
     generic(
-        BIT_WIDTH_G : integer := 24
+        BIT_WIDTH_G : integer := 16
     );
     port(
         clk     : in  std_logic;
@@ -50,7 +58,7 @@ architecture VHD_top_ARCH of VHD_top is
         );
     end component VHD_axis_i2s2;
 
-    component VHD_axis_volume_controller
+    component VHD_axis_data_handler
     	generic(BIT_WIDTH_G : integer);
     	port(
     		clock           : in  std_logic;
@@ -64,7 +72,7 @@ architecture VHD_top_ARCH of VHD_top is
     		m_axis_valid    : out std_logic;
     		m_axis_ready    : in  std_logic
     	);
-    end component VHD_axis_volume_controller;
+    end component VHD_axis_data_handler;
 
     --comment out for GHDL simulations
     component clk_wiz_0
@@ -112,8 +120,8 @@ begin
             rx_sdin    => rx_data
         );
 
-    volume_inst : component VHD_axis_volume_controller
-        generic map(BIT_WIDTH_G => 16) --trying 16 bit LUT instead
+    data_inst : component VHD_axis_data_handler
+        generic map(BIT_WIDTH_G => BIT_WIDTH_G) --trying 16 bit LUT instead
         port map(
             clock        => axis_clock,
             reset        => btnC,

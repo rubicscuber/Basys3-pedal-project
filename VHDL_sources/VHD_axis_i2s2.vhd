@@ -2,8 +2,21 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+----------------------------------------------------------------------------
+-- This component is designed to interface with the DAC and ADC, and pass off 
+-- data to the rest of the design.
+
+-- mclk = 22.579MHz
+-- sclk = mclk/8
+-- lrck = sclk/64
+
+-- Serial data from ADC arrives with the MSB one sclk period after lrck switches state.
+-- In the current clock configuration, the ADC is capable of delivering 24bits of resolution.
+-- the mif file however has a size limitation so its only using 16bits per sample.
+----------------------------------------------------------------------------
+
 entity VHD_axis_i2s2 is
-    generic(BIT_WIDTH_G : integer := 24);
+    generic(BIT_WIDTH_G : integer := 16);
     port(
         clock : in std_logic;
         reset : in std_logic;
@@ -206,8 +219,10 @@ begin
     end process;
 
     --use only upper 16 bits for processing in the next component
-    rx_m_data <= rx_data_l(31 downto (32-16)) & x"0000";
-    
+    --rx_m_data <= rx_data_l(31 downto (31-BIT_WIDTH_G+1)) & x"0000";
+    rx_m_data <= rx_data_l(31 downto (31-BIT_WIDTH_G+1)) & ZEROS;
+
+
     --multiplex between data_r and data_l based on status of last
     --TODO: Remove left/right channel switching behavior and simplify axis
     --MUX_RX_MASTER_DATA : with rx_m_last_out select
