@@ -53,7 +53,6 @@ architecture VHD_axis_volume_controller_ARCH of VHD_axis_data_handler is
     --constant DATA_FILE : string := "tanh_16x65536.mif";
     --constant DATA_FILE : string := "9tanh_16x65536.mif";
     constant DATA_FILE : string := "20tanh_16x65536.mif";
-    --constant DATA_FILE : string := "tanh_24x.16777216.mif";
 
     signal addr : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal dout : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -87,9 +86,7 @@ begin
             addr  => addr,
             dout  => dout
         );
-    
 
-    s_axis_ready <= s_axis_ready_out;
 
     --strip the top 16 bits of the 32 bit vector
     s_addr <= s_axis_data_in(31 downto (31-DATA_WIDTH+1)); 
@@ -110,6 +107,8 @@ begin
             end if;
         end if;
     end process;
+
+    s_axis_ready <= s_axis_ready_out;
 
     S_READY_OUT : process(clock, reset) 
     begin

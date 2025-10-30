@@ -201,7 +201,6 @@ begin
         end if;
     end process;
 
-    rx_m_valid <= rx_m_valid_out; 
 
     --Registers the incoming ADC data at end of frame count
     REGISTER_ADC_DATA: process(clock, reset) is
@@ -229,6 +228,8 @@ begin
     --    rx_m_data <= rx_data_r when '1', --output data
     --                 rx_data_l when '0', --output data
     --                 (others => '0') when others;
+
+    rx_m_valid <= rx_m_valid_out; 
 
     VALID_CONTROL_OUT : process (clock, reset) is 
     begin
