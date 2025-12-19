@@ -38,13 +38,13 @@ architecture VHD_top_ARCH of VHD_top is
             clock      : in  std_logic;
             reset      : in  std_logic;
 
-            tx_s_data  : in  std_logic_vector(31 downto 0);
-            tx_s_valid : in  std_logic;
-            tx_s_ready : out std_logic;
+            tx_s_data_i  : in  std_logic_vector(31 downto 0);
+            tx_s_valid_i : in  std_logic;
+            tx_s_ready_o : out std_logic;
 
-            rx_m_data  : out std_logic_vector(31 downto 0);
-            rx_m_valid : out std_logic;
-            rx_m_ready : in  std_logic;
+            rx_m_data_o  : out std_logic_vector(31 downto 0);
+            rx_m_valid_o : out std_logic;
+            rx_m_ready_i : in  std_logic;
 
             tx_mclk    : out std_logic;
             tx_lrck    : out std_logic;
@@ -58,21 +58,21 @@ architecture VHD_top_ARCH of VHD_top is
         );
     end component VHD_axis_i2s2;
 
-    component VHD_axis_data_handler
+    component VHD_axi_rom_interface
     	generic(BIT_WIDTH_G : integer);
     	port(
     		clock           : in  std_logic;
     		reset           : in  std_logic;
 
-    		s_axis_data_in  : in  std_logic_vector(31 downto 0);
-    		s_axis_valid    : in  std_logic;
-    		s_axis_ready    : out std_logic;
+    		s_axis_data_i   : in  std_logic_vector(31 downto 0);
+    		s_axis_valid_i  : in  std_logic;
+    		s_axis_ready_o  : out std_logic;
 
-    		m_axis_data_out : out std_logic_vector(31 downto 0);
-    		m_axis_valid    : out std_logic;
-    		m_axis_ready    : in  std_logic
+    		m_axis_data_o   : out std_logic_vector(31 downto 0);
+    		m_axis_valid_o  : out std_logic;
+    		m_axis_ready_i  : in  std_logic
     	);
-    end component VHD_axis_data_handler;
+    end component VHD_axi_rom_interface;
 
     --comment out for GHDL simulations
     component clk_wiz_0
@@ -85,13 +85,13 @@ architecture VHD_top_ARCH of VHD_top is
 
     signal axis_clock : std_logic;
 
-    signal s_data  : std_logic_vector(31 downto 0);
-    signal s_valid : std_logic;
-    signal s_ready : std_logic;
+    signal s_data_s  : std_logic_vector(31 downto 0);
+    signal s_valid_s : std_logic;
+    signal s_ready_s : std_logic;
 
-    signal m_data  : std_logic_vector(31 downto 0);
-    signal m_valid : std_logic;
-    signal m_ready : std_logic;
+    signal m_data_s  : std_logic_vector(31 downto 0);
+    signal m_valid_s : std_logic;
+    signal m_ready_s : std_logic;
 
 begin
 
@@ -101,13 +101,13 @@ begin
             clock      => axis_clock,
             reset      => btnC,
 
-            tx_s_data  => s_data,
-            tx_s_valid => s_valid,
-            tx_s_ready => s_ready,
+            tx_s_data_i  => s_data_s,
+            tx_s_valid_i => s_valid_s,
+            tx_s_ready_o => s_ready_s,
 
-            rx_m_data  => m_data,
-            rx_m_valid => m_valid,
-            rx_m_ready => m_ready,
+            rx_m_data_o  => m_data_s,
+            rx_m_valid_o => m_valid_s,
+            rx_m_ready_i => m_ready_s,
 
             tx_mclk    => tx_mclk,
             tx_lrck    => tx_lrck,
@@ -120,19 +120,19 @@ begin
             rx_sdin    => rx_data
         );
 
-    data_inst : component VHD_axis_data_handler
+    axi_rom_interface_inst : component VHD_axi_rom_interface
         generic map(BIT_WIDTH_G => BIT_WIDTH_G) --trying 16 bit LUT instead
         port map(
             clock        => axis_clock,
             reset        => btnC,
 
-            s_axis_data_in  => m_data,
-            s_axis_valid => m_valid,
-            s_axis_ready => m_ready,
+            s_axis_data_i  => m_data_s,
+            s_axis_valid_i => m_valid_s,
+            s_axis_ready_o => m_ready_s,
 
-            m_axis_data_out  => s_data,
-            m_axis_valid => s_valid,
-            m_axis_ready => s_ready
+            m_axis_data_o  => s_data_s,
+            m_axis_valid_o => s_valid_s,
+            m_axis_ready_i => s_ready_s
         );
 
     axis_clock_gen : component clk_wiz_0

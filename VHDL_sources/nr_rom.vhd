@@ -20,8 +20,8 @@ entity nr_rom is
         clock : in std_logic;
         reset : in std_logic;
 
-        addr : in std_logic_vector;
-        dout : out std_logic_vector
+        addr : in std_logic_vector(DATA_WIDTH_G-1 downto 0);
+        dout : out std_logic_vector(DATA_WIDTH_G-1 downto 0)
     );
 end entity nr_rom;
 

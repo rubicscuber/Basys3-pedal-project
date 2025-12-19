@@ -12,14 +12,14 @@ architecture behavioral of axis_i2s2_testbench is
    		clock      : in  std_logic;
    		reset      : in  std_logic;
 
-   		tx_s_data  : in  std_logic_vector(31 downto 0);
-   		tx_s_valid : in  std_logic;
-   		tx_s_ready : out std_logic;
+   		tx_s_data_i  : in  std_logic_vector(31 downto 0);
+   		tx_s_valid_i : in  std_logic;
+   		tx_s_ready_o : out std_logic;
    		tx_s_last  : in  std_logic;
 
-   		rx_m_data  : out std_logic_vector(31 downto 0);
-   		rx_m_valid : out std_logic;
-   		rx_m_ready : in  std_logic;
+   		rx_m_data_o  : out std_logic_vector(31 downto 0);
+   		rx_m_valid_o : out std_logic;
+   		rx_m_ready_i : in  std_logic;
    		rx_m_last  : out std_logic;
 
    		tx_mclk    : out std_logic;
@@ -63,14 +63,14 @@ begin
         clock      => clock,
         reset      => reset,
 
-        tx_s_data  => tx_s_data,
-        tx_s_valid => tx_s_valid,
-        tx_s_ready => tx_s_ready,
+        tx_s_data_i  => tx_s_data,
+        tx_s_valid_i => tx_s_valid,
+        tx_s_ready_o => tx_s_ready,
         tx_s_last  => tx_s_last,
 
-        rx_m_data  => rx_m_data,
-        rx_m_valid => rx_m_valid,
-        rx_m_ready => rx_m_ready,
+        rx_m_data_o  => rx_m_data,
+        rx_m_valid_o => rx_m_valid,
+        rx_m_ready_i => rx_m_ready,
         rx_m_last  => rx_m_last,
 
         tx_mclk    => tx_mclk,

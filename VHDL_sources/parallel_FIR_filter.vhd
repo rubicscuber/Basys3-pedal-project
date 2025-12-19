@@ -41,101 +41,145 @@
 --================= https://github.com/DHMarinov =================--
 --------------------------------------------------------------------
 
-
-
 library ieee;
 use ieee.std_logic_1164.ALL;
 use ieee.numeric_std.ALL;
 
 entity parallel_FIR_filter is
 
-    generic (
-        FILTER_TAPS  : integer := 60;
-        INPUT_WIDTH  : integer range 8 to 25 := 24; 
-        COEFF_WIDTH  : integer range 8 to 18 := 16;
-        OUTPUT_WIDTH : integer range 8 to 43 := 24    -- This should be < (Input+Coeff width-1) 
+    generic(
+        FILTER_TAPS  : integer               := 60;
+        INPUT_WIDTH  : integer range 8 to 25 := 12;
+        COEFF_WIDTH  : integer range 8 to 18 := 12;
+        OUTPUT_WIDTH : integer range 8 to 43 := 12 -- This should be < (Input+Coeff width-1) 
     );
 
-    port (
-           clk    : in STD_LOGIC;
-           reset  : in STD_LOGIC;
-           enable : in STD_LOGIC;
-           data_i : in STD_LOGIC_VECTOR (INPUT_WIDTH-1 downto 0);
-           data_o : out STD_LOGIC_VECTOR (OUTPUT_WIDTH-1 downto 0)
-    );
+    port(
+        clock        : in  STD_LOGIC;
+        reset        : in  STD_LOGIC;
 
+        s_axi_data_i : in  STD_LOGIC_VECTOR(INPUT_WIDTH - 1 downto 0);
+        s_axi_valid_i  : in  std_logic;
+        s_axi_ready_o  : out std_logic;
+
+        m_axi_data_o : out STD_LOGIC_VECTOR(OUTPUT_WIDTH - 1 downto 0);
+        m_axi_valid_o  : out std_logic;
+        m_axi_ready_i  : in  std_logic
+    );
 end parallel_FIR_filter;
 
 architecture behavioral of parallel_FIR_filter is
 
-    attribute use_dsp : string;
+    attribute use_dsp               : string;
     attribute use_dsp of Behavioral : architecture is "yes";
 
-    constant MAC_WIDTH : integer := COEFF_WIDTH+INPUT_WIDTH;
+    constant MAC_WIDTH : integer := COEFF_WIDTH + INPUT_WIDTH; --32 = 16 + 16
 
-    type input_registers is array(0 to FILTER_TAPS-1) of signed(INPUT_WIDTH-1 downto 0);
-    signal areg_s  : input_registers := (others=>(others=>'0'));
+    type   input_registers is array (0 to FILTER_TAPS - 1) of signed(INPUT_WIDTH - 1 downto 0);
+    signal areg_s          : input_registers := (others => (others => '0'));
 
-    type mult_registers is array(0 to FILTER_TAPS-1) of signed(INPUT_WIDTH+COEFF_WIDTH-1 downto 0);
-    signal mreg_s : mult_registers := (others=>(others=>'0'));
+    type   mult_registers is array (0 to FILTER_TAPS - 1) of signed(INPUT_WIDTH + COEFF_WIDTH - 1 downto 0);
+    signal mreg_s         : mult_registers := (others => (others => '0'));
 
-    type dsp_registers is array(0 to FILTER_TAPS-1) of signed(MAC_WIDTH-1 downto 0);
-    signal preg_s : dsp_registers := (others=>(others=>'0'));
+    type   dsp_registers is array (0 to FILTER_TAPS - 1) of signed(MAC_WIDTH - 1 downto 0);
+    signal preg_s        : dsp_registers := (others => (others => '0'));
 
-    signal dout_s : std_logic_vector(MAC_WIDTH-1 downto 0);
-    signal sign_s : signed(MAC_WIDTH-INPUT_WIDTH-COEFF_WIDTH+1 downto 0) := (others=>'0');
+    signal dout_s : std_logic_vector(MAC_WIDTH - 1 downto 0);
+    signal sign_s : signed(MAC_WIDTH - INPUT_WIDTH - COEFF_WIDTH + 1 downto 0) := (others => '0');
 
     -- Chebyshev 1kH LPF, causes overflow at low freq. 
-    type coefficients is array (0 to 59) of signed( 15 downto 0);
-    signal breg_s: coefficients :=( 
+    type   coefficients is array (0 to 59) of signed(12-1 downto 0);
+    signal breg_s       : coefficients := (
+        -- 500Hz Blackman LPF
+        x"000", x"001", x"005", x"00C",
+        x"016", x"025", x"037", x"04E",
+        x"069", x"08B", x"0B2", x"0E0",
+        x"114", x"14E", x"18E", x"1D3",
+        x"21D", x"26A", x"2BA", x"30B",
+        x"35B", x"3AA", x"3F5", x"43B",
+        x"47B", x"4B2", x"4E0", x"504",
+        x"51C", x"528", x"528", x"51C",
+        x"504", x"4E0", x"4B2", x"47B",
+        x"43B", x"3F5", x"3AA", x"35B",
+        x"30B", x"2BA", x"26A", x"21D",
+        x"1D3", x"18E", x"14E", x"114",
+        x"0E0", x"0B2", x"08B", x"069",
+        x"04E", x"037", x"025", x"016",
+        x"00C", x"005", x"001", x"000");
 
-    -- 500Hz Blackman LPF
-    x"0000", x"0001", x"0005", x"000C", 
-    x"0016", x"0025", x"0037", x"004E", 
-    x"0069", x"008B", x"00B2", x"00E0", 
-    x"0114", x"014E", x"018E", x"01D3", 
-    x"021D", x"026A", x"02BA", x"030B", 
-    x"035B", x"03AA", x"03F5", x"043B", 
-    x"047B", x"04B2", x"04E0", x"0504", 
-    x"051C", x"0528", x"0528", x"051C", 
-    x"0504", x"04E0", x"04B2", x"047B", 
-    x"043B", x"03F5", x"03AA", x"035B", 
-    x"030B", x"02BA", x"026A", x"021D", 
-    x"01D3", x"018E", x"014E", x"0114", 
-    x"00E0", x"00B2", x"008B", x"0069", 
-    x"004E", x"0037", x"0025", x"0016", 
-    x"000C", x"0005", x"0001", x"0000");
-
+        constant ACTIVE : std_logic := '1';
+        signal s_axi_ready_out_s : std_logic;
+        signal m_axi_valid_out_s : std_logic;
 begin
 
-    data_o <= std_logic_vector(preg_s(0)(MAC_WIDTH-2 downto MAC_WIDTH-OUTPUT_WIDTH-1));
+    s_axi_ready_o <= s_axi_ready_out_s;
+    m_axi_valid_o <= m_axi_valid_out_s;
 
-    PARALLEL_FIR : process(clk) is
+    --TODO: stopping point
+    --figure logic that will go on axi master side
+    axi_slave : process(clock) is 
     begin
-        if rising_edge(clk) then
-
-            if (reset = '1') then
-                for i in 0 to FILTER_TAPS-1 loop
-                    areg_s(i) <=(others=> '0');
-                    mreg_s(i) <=(others=> '0');
-                    preg_s(i) <=(others=> '0');
-                end loop;
-
-            elsif (reset = '0') then
-                for i in 0 to FILTER_TAPS-1 loop
-                    areg_s(i) <= signed(data_i);
-
-                    if (i < FILTER_TAPS-1) then
-                        mreg_s(i) <= areg_s(i)*breg_s(i);
-                        preg_s(i) <= mreg_s(i) + preg_s(i+1);
-
-                    elsif (i = FILTER_TAPS-1) then
-                        mreg_s(i) <= areg_s(i)*breg_s(i);
-                        preg_s(i)<= mreg_s(i);
-                    end if;
-                end loop;
+        if rising_edge(clock) then
+            if reset = '1' then
+            s_axi_ready_out_s <= '1';
+            else
+                if s_axi_valid_i = '1' and s_axi_ready_out_s = '1' then
+                    s_axi_ready_out_s <= '0'; 
+                elsif s_axi_ready_out_s = '0' then
+                    s_axi_ready_out_s <= '1';
+                end if;
             end if;
+        end if;
+    end process;
 
+    axi_master : process(clock)
+    begin
+        if rising_edge(clock) then
+            if reset = '1' then
+                m_axi_data_o <= (others => '0');
+                m_axi_valid_out_s <= '0';
+            else
+                if m_axi_ready_i = '1' then
+                    m_axi_data_o <= std_logic_vector(preg_s(0)(MAC_WIDTH - 2 downto MAC_WIDTH - OUTPUT_WIDTH - 1));
+                    m_axi_valid_out_s <= '1';
+                elsif m_axi_valid_out_s = '1' then 
+                    m_axi_valid_out_s <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
+
+    --32-2 downto 32-16-1
+    --30 downto 15 so this filter is not passing the MSB to output why?
+    --m_axi_data_o <= std_logic_vector(preg_s(0)(MAC_WIDTH - 2 downto MAC_WIDTH - OUTPUT_WIDTH - 1));
+
+    PARALLEL_FIR : process(clock) is
+    begin
+        if rising_edge(clock) then
+
+            if (reset = ACTIVE) then
+                for i in 0 to FILTER_TAPS - 1 loop
+                    areg_s(i) <= (others => '0');
+                    mreg_s(i) <= (others => '0');
+                    preg_s(i) <= (others => '0');
+                end loop;
+
+            elsif (reset = not ACTIVE) then
+                if s_axi_valid_i = ACTIVE and s_axi_ready_out_s = ACTIVE then
+                    for i in 0 to FILTER_TAPS - 1 loop
+                        areg_s(i) <= signed(s_axi_data_i);
+
+                        if (i < FILTER_TAPS - 1) then
+                            mreg_s(i) <= areg_s(i) * breg_s(i);
+                            preg_s(i) <= mreg_s(i) + preg_s(i + 1);
+
+                        elsif (i = FILTER_TAPS - 1) then
+                            mreg_s(i) <= areg_s(i) * breg_s(i);
+                            preg_s(i) <= mreg_s(i);
+                        end if;
+                    end loop;
+                end if;
+            end if;
         end if;
     end process;
 

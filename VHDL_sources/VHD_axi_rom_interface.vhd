@@ -11,27 +11,31 @@ use ieee.numeric_std.all;
 -- on the very next clock cycle. 
 --
 -- The data in this component will be passed to the output
--- as soon at the s_new_packet flag shifts to r_new_packet
+-- as soon at the s_new_packet flag shifts to r_new_packet 
 -- on the very next clock cycle (assuming the ready is also asserted)
 -- This means that the ROM has only one clock cycle to hand back valid data.
 ----------------------------------------------------------------------------
-entity VHD_axis_data_handler is
-    generic(BIT_WIDTH_G : integer := 16);
+entity VHD_axi_rom_interface is
+    generic(
+        BIT_WIDTH_G : integer := 16;
+        MIF_FILE_G : string := "20tanh_16x65536.mif"
+    );
+
     port(
         clock : in std_logic;
         reset : in std_logic;
 
-        s_axis_data_in : in std_logic_vector(31 downto 0);
-        s_axis_valid : in std_logic;
-        s_axis_ready : out std_logic;
+        s_axis_data_i : in std_logic_vector(31 downto 0);
+        s_axis_valid_i : in std_logic;
+        s_axis_ready_o : out std_logic;
 
-        m_axis_data_out : out std_logic_vector(31 downto 0);
-        m_axis_valid : out std_logic;
-        m_axis_ready : in std_logic
+        m_axis_data_o : out std_logic_vector(31 downto 0);
+        m_axis_valid_o : out std_logic;
+        m_axis_ready_i : in std_logic
     );
-end entity VHD_axis_data_handler;
+end entity VHD_axi_rom_interface;
 
-architecture VHD_axis_volume_controller_ARCH of VHD_axis_data_handler is
+architecture behavioral of VHD_axi_rom_interface is
 
     component nr_rom
         generic(
@@ -52,7 +56,7 @@ architecture VHD_axis_volume_controller_ARCH of VHD_axis_data_handler is
     --constant DATA_FILE : string := "tanh_12x4096.mif";
     --constant DATA_FILE : string := "tanh_16x65536.mif";
     --constant DATA_FILE : string := "9tanh_16x65536.mif";
-    constant DATA_FILE : string := "20tanh_16x65536.mif";
+    --constant DATA_FILE : string := "20tanh_16x65536.mif";
     --constant DATA_FILE : string := "tanh_24x.16777216.mif";
 
     signal addr : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -70,8 +74,7 @@ architecture VHD_axis_volume_controller_ARCH of VHD_axis_data_handler is
     --constant vecotr of zeros to fill the least significant of output data
     constant ZEROS : std_logic_vector(31-BIT_WIDTH_G downto 0) := (others => '0');
 
-    signal s_addr : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal signed_addr_int : integer;
+    signal s_addr : signed(DATA_WIDTH-1 downto 0);
 
 begin
 
@@ -79,7 +82,7 @@ begin
         generic map(
             DATA_WIDTH_G => DATA_WIDTH,
             ADDR_WIDTH_G => ADDR_WIDTH,
-            DATA_FILE_G  => DATA_FILE 
+            DATA_FILE_G  => MIF_FILE_G 
         )
         port map(
             clock => clock,
@@ -89,22 +92,17 @@ begin
         );
     
 
-    s_axis_ready <= s_axis_ready_out;
+    s_axis_ready_o <= s_axis_ready_out;
 
     --strip the top 16 bits of the 32 bit vector
-    s_addr <= s_axis_data_in(31 downto (31-DATA_WIDTH+1)); 
-
-    --convert the signed vector to integer such that it ranges from 0 to 65,536
-    signed_addr_int <= to_integer(signed(s_addr)) + 2**DATA_WIDTH/2; 
+    s_addr <= signed(s_axis_data_i(31 downto (31-DATA_WIDTH+1))); 
 
     NEW_PACKET_IN : process(clock) is
     begin
         if rising_edge(clock) then
-            if s_axis_valid = '1' and s_axis_ready_out = '1' then
+            if s_axis_valid_i = '1' and s_axis_ready_out = '1' then
                 s_new_packet <= '1';
-
-                addr <= std_logic_vector(to_unsigned(signed_addr_int, BIT_WIDTH_G));
-
+                addr <= std_logic_vector(s_addr + 2**DATA_WIDTH/2);
             else
                 s_new_packet <= '0';
             end if;
@@ -139,7 +137,7 @@ begin
     NEW_PACKET_OUT : process(clock) is
     begin
         if rising_edge(clock) then
-            if m_axis_valid_out = '1' and m_axis_ready = '1' then
+            if m_axis_valid_out = '1' and m_axis_ready_i = '1' then
                 m_new_packet <= '1';
             else 
                 m_new_packet <= '0';
@@ -151,13 +149,13 @@ begin
     begin
         if reset = '1' then
             m_axis_valid_out <= '0';
-            m_axis_data_out <= (others => '0');
+            m_axis_data_o <= (others => '0');
 
         elsif rising_edge(clock) then
             if s_new_packet_r = '1' then
                 m_axis_valid_out <= '1';
 
-                m_axis_data_out <= dout & ZEROS;
+                m_axis_data_o <= dout & ZEROS;
 
             elsif m_new_packet = '1' then
                 m_axis_valid_out <= '0';
@@ -165,6 +163,6 @@ begin
         end if;
     end process;
 
-    m_axis_valid <= m_axis_valid_out;
+    m_axis_valid_o <= m_axis_valid_out;
 
-end architecture VHD_axis_volume_controller_ARCH;
+end architecture behavioral;

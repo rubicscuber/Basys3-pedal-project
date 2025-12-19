@@ -15,7 +15,7 @@ def convert(txt_filename, mif_filename, bitWidth):
 
     #  MATLAB has rough time converting decimal numbers into signed binary strings of custom bit width thats not 8, 16, 32, 64.
     #  This program reads a .txt file of whole number decimals, each row ending in a '\n' character.
-    #  It then converts each whole number from that .txt file to signed binary string representation in a .mif file.
+    #  It then converts each integer whole number from that .txt file to signed binary string representation in a .mif file.
     #  Each row in the .mif ends with '\n' for the rom.vhd to parse correctly
 
     BIT_WIDTH = bitWidth

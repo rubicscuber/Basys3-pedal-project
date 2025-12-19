@@ -21,13 +21,13 @@ entity VHD_axis_i2s2 is
         clock : in std_logic;
         reset : in std_logic;
 
-        tx_s_data : in std_logic_vector(31 downto 0);
-        tx_s_valid : in std_logic;
-        tx_s_ready : out std_logic; --register
+        tx_s_data_i : in std_logic_vector(31 downto 0);
+        tx_s_valid_i : in std_logic;
+        tx_s_ready_o : out std_logic; --register
 
-        rx_m_data : out std_logic_vector(31 downto 0);
-        rx_m_valid : out std_logic; --register
-        rx_m_ready : in std_logic;
+        rx_m_data_o : out std_logic_vector(31 downto 0);
+        rx_m_valid_o : out std_logic; --register
+        rx_m_ready_i : in std_logic;
 
         --clocks to keep i2s in slave mode on transmit side
         tx_mclk : out std_logic;
@@ -90,7 +90,7 @@ begin
     rx_lrck <= count(8);
     rx_sclk <= count(2);
 
-    tx_s_ready <= tx_s_ready_out;
+    tx_s_ready_o <= tx_s_ready_out;
 
     --axis slave controllers
     AXIS_SLAVE_CONTROLLER : process(clock, reset) is 
@@ -98,7 +98,7 @@ begin
         if reset = ACTIVE then
             tx_s_ready_out <= '0';
         elsif rising_edge(clock) then
-            if tx_s_ready_out = '1' and tx_s_valid = '1' then
+            if tx_s_ready_out = '1' and tx_s_valid_i = '1' then
                 tx_s_ready_out <= '0';
             elsif count = 0 then
                 tx_s_ready_out <= '0';
@@ -114,9 +114,9 @@ begin
         if reset = ACTIVE then
             tx_data_l <= (others => '0');
         elsif rising_edge(clock) then
-            if tx_s_valid = '1' and tx_s_ready_out = '1' then
+            if tx_s_valid_i = '1' and tx_s_ready_out = '1' then
                 tx_data_l <= (others => '0');
-                tx_data_r <= tx_s_data; 
+                tx_data_r <= tx_s_data_i; 
                 --TODO: clear to mono processing after
                 --verifying hardware tests
             end if;
@@ -201,7 +201,7 @@ begin
         end if;
     end process;
 
-    rx_m_valid <= rx_m_valid_out; 
+    rx_m_valid_o <= rx_m_valid_out; 
 
     --Registers the incoming ADC data at end of frame count
     REGISTER_ADC_DATA: process(clock, reset) is
@@ -220,7 +220,7 @@ begin
 
     --use only upper 16 bits for processing in the next component
     --rx_m_data <= rx_data_l(31 downto (31-BIT_WIDTH_G+1)) & x"0000";
-    rx_m_data <= rx_data_l(31 downto (31-BIT_WIDTH_G+1)) & ZEROS;
+    rx_m_data_o <= rx_data_l(31 downto (31-BIT_WIDTH_G+1)) & ZEROS;
 
 
     --multiplex between data_r and data_l based on status of last
@@ -237,7 +237,7 @@ begin
         elsif rising_edge(clock) then
             if count = EOF and rx_m_valid_out = '0' then
                 rx_m_valid_out <= '1';
-            elsif rx_m_valid_out = '1' and rx_m_ready = '1' then
+            elsif rx_m_valid_out = '1' and rx_m_ready_i = '1' then
                 rx_m_valid_out <= '0';
             end if;
         end if;

@@ -25,9 +25,9 @@ architecture behavioral of rom_TB is
     --constant ADDR_WIDTH : integer := 24;
     --constant DATA_FILE : string := "tanh_24x16777216.mif"; --data_width x number_of_addresses
 
-    constant DATA_WIDTH : integer := 16;
-    constant ADDR_WIDTH : integer := 16;
-    constant DATA_FILE : string := "tanh_16x65536.mif";
+    constant DATA_WIDTH : integer := 12;
+    constant ADDR_WIDTH : integer := 12;
+    constant DATA_FILE : string := "tanh_12x4096.mif";
 
     --constant DATA_WIDTH : integer := 12;
     --constant ADDR_WIDTH : integer := 12;
