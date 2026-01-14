@@ -115,8 +115,8 @@ begin
     s_axi_ready_o <= s_axi_ready_out_s;
     m_axi_valid_o <= m_axi_valid_out_s;
 
-    --TODO: stopping point
-    --figure logic that will go on axi master side
+    --TODO: stopping point: fix logic that will go on axi master side
+    
     axi_slave : process(clock) is 
     begin
         if rising_edge(clock) then

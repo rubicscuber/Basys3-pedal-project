@@ -216,7 +216,7 @@ begin
 
             --write values from -range to +range
             sdataVector <= std_logic_vector(to_signed(i,DATA_WIDTH));
-            wait until rising_edge(tx_lrck);
+            wait until falling_edge(tx_lrck);
 
             for j in DATA_WIDTH-1 downto 0 loop --msb arrives first
                 wait until rising_edge(tx_sclk);
