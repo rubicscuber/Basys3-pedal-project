@@ -6,7 +6,7 @@ SIM_DIR := $(CURDIR)/sim_sources
 all:
 	#######--------Assemble--------#######
 	@$(GHDL) -a $(FLAGS) $(SRC_DIR)/VHD_axis_i2s2.vhd
-	@$(GHDL) -a $(FLAGS) $(SRC_DIR)/VHD_axis_volume_controller.vhd
+	@$(GHDL) -a $(FLAGS) $(SRC_DIR)/VHD_axis_data_handler.vhd
 	@$(GHDL) -a $(FLAGS) $(SRC_DIR)/nr_rom.vhd
 	@$(GHDL) -a $(FLAGS) $(SRC_DIR)/VHD_top.vhd
 
